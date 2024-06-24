@@ -197,20 +197,26 @@ class Singleton
     }
 }
 
-abstract class Pizzeria {
+abstract class Pizzeria
+{
 
     List<String> typesPizzas = new ArrayList<>(2);
-    Pizza creerPizza1() {
+
+    Pizza creerPizza1()
+    {
         System.out.println("Votre pizza " + typesPizzas.get(0) + "est prête !");
         return new PizzaNull();
     }
-    Pizza creerPizza2() {
+
+    Pizza creerPizza2()
+    {
         System.out.println("Votre pizza " + typesPizzas.get(1) + "est prête !");
         return new PizzaNull();
     }
 }
 
-class PizzeriaFrançaise extends Pizzeria {
+class PizzeriaFrançaise extends Pizzeria
+{
 
     public PizzeriaFrançaise()
     {
@@ -233,7 +239,8 @@ class PizzeriaFrançaise extends Pizzeria {
     }
 }
 
-class PizzeriaItalienne extends Pizzeria {
+class PizzeriaItalienne extends Pizzeria
+{
     public PizzeriaItalienne()
     {
         typesPizzas.add("Margherita");
@@ -254,7 +261,9 @@ class PizzeriaItalienne extends Pizzeria {
         return new PizzaBolognaise();
     }
 }
-abstract class Pizza {
+
+abstract class Pizza extends Prototype
+{
     String sauce;
 
     String garniture;
@@ -264,7 +273,8 @@ abstract class Pizza {
     abstract public void setGarniture();
 }
 
-class PizzaNull extends Pizza {
+class PizzaNull extends Pizza
+{
     @Override
     public void setSauce()
     {
@@ -278,7 +288,8 @@ class PizzaNull extends Pizza {
     }
 }
 
-class PizzaSavoyarde extends Pizza {
+class PizzaSavoyarde extends Pizza
+{
 
 
     @Override
@@ -294,7 +305,8 @@ class PizzaSavoyarde extends Pizza {
     }
 }
 
-class PizzaPaysanne extends Pizza {
+class PizzaPaysanne extends Pizza
+{
     @Override
     public void setSauce()
     {
@@ -308,7 +320,8 @@ class PizzaPaysanne extends Pizza {
     }
 }
 
-class PizzaMargherita extends Pizza {
+class PizzaMargherita extends Pizza
+{
     @Override
     public void setSauce()
     {
@@ -322,7 +335,8 @@ class PizzaMargherita extends Pizza {
     }
 }
 
-class PizzaBolognaise extends Pizza {
+class PizzaBolognaise extends Pizza
+{
     @Override
     public void setSauce()
     {
@@ -336,14 +350,92 @@ class PizzaBolognaise extends Pizza {
     }
 }
 
+
+enum TypePizza
+{
+    Savoyarde, Paysanne, Margherita, Bolognaise
+}
+
+class PizzeriaConcrete
+{
+
+    void prenderCommande()
+    {
+    }
+
+    void ServirClient()
+    {
+    }
+
+    Pizza creerPizza(TypePizza typePizza)
+    {
+        Pizza pizza = new PizzaNull();
+        switch (typePizza)
+        {
+            case Paysanne -> pizza = new PizzaPaysanne();
+            case Savoyarde -> pizza = new PizzaSavoyarde();
+            case Margherita -> pizza = new PizzaMargherita();
+            case Bolognaise-> pizza = new PizzaBolognaise();
+
+        }
+        return pizza;
+    }
+
+}
+
+abstract class Prototype implements Cloneable {
+
+}
+
+class PrototypeManager {
+
+}
+
+
+abstract class PizzaFrançaise extends Pizza {
+
+    PizzaFrançaise() {
+        super();
+        sauce = "Creme";
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        Object pizza = super.clone();
+        ((Pizza) pizza).sauce = this.sauce;
+        return pizza;
+    }
+}
+
+abstract class PizzaItalienne extends Pizza {
+
+    PizzaItalienne() {
+        super();
+        sauce = "Tomate";
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        Object pizza = super.clone();
+        ((Pizza) pizza).sauce = this.sauce;
+        return pizza;
+    }
+}
+
+
+
 // type Forme = Cercle of int | Carre of int | Triangle of int*int*int
 
-abstract class Forme {
+abstract class Forme
+{
     abstract void dessiner();
 
 }
 
-class Cercle extends Forme {
+class Cercle extends Forme
+{
     int rayon;
 
     public Cercle(int rayon)
@@ -358,7 +450,8 @@ class Cercle extends Forme {
     }
 }
 
-class Carre extends Forme {
+class Carre extends Forme
+{
     int cote;
 
     public Carre(int cote)
@@ -373,8 +466,9 @@ class Carre extends Forme {
     }
 }
 
-class Triangle extends Forme {
-    int a,b,c;
+class Triangle extends Forme
+{
+    int a, b, c;
 
     public Triangle(int a, int b, int c)
     {
@@ -390,12 +484,14 @@ class Triangle extends Forme {
     }
 }
 
+
+
 public class DesignPattern
 {
 
     public static void main(String[] args)
     {
-        List<Forme> formes = new ArrayList<>(Arrays.asList(new Carre(5), new Cercle(3), new Triangle(6,6,6)));
+        List<Forme> formes = new ArrayList<>(Arrays.asList(new Carre(5), new Cercle(3), new Triangle(6, 6, 6)));
         for (Forme forme : formes)
         {
             forme.dessiner();
