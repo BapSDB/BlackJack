@@ -1,28 +1,34 @@
 import java.util.*;
 
-final class Cellule<T> {
-    T element;
-    Cellule<T> next;
+class Liste<T> implements Deque<T> {
 
-    Cellule(T element, Cellule<T> next) {
-        this.element = element;
-        this.next = next;
+    private static final class Cellule<T> {
+        T element;
+        Cellule<T> prev, next;
+
+        Cellule() {
+            this(null);
+        }
+
+        Cellule(T element) {
+            this(element, null, null);
+        }
+
+        Cellule(T element, Cellule<T> prev, Cellule<T> next) {
+            this.element = element;
+            this.prev = prev;
+            this.next = next;
+        }
+
     }
 
-    Cellule(Cellule<T> copy) {
-        this(copy.element, copy.next);
-    }
-}
-
-class Liste<T> implements Collection<T> {
-
-    private Cellule<T> fictif, queue;
+    private final Cellule<T> fictif;
     private int size;
 
     public Liste() {
-        this.fictif = new Cellule<>(null, fictif);
-        this.queue = this.fictif;
-        this.size = 0;
+        fictif = new Cellule<>();
+        fictif.next = fictif.prev = fictif;
+        size = 0;
     }
 
     public Liste(Collection<? extends T> elements) {
@@ -35,6 +41,172 @@ class Liste<T> implements Collection<T> {
         this(Arrays.asList(elements));
     }
 
+    public void reverse() {
+        var tmp = new Liste<>(this);
+        this.clear();
+        tmp.forEach(this::push);
+    }
+
+    @Override
+    public void addFirst(T t) {
+        final Cellule<T> cellule = new Cellule<>(t, fictif, fictif.next);
+        fictif.next.prev = cellule;
+        fictif.next = cellule;
+        size++;
+    }
+
+    @Override
+    public void addLast(T t) {
+        final Cellule<T> cellule = new Cellule<>(t, fictif.prev, fictif);
+        fictif.prev.next = cellule;
+        fictif.prev = cellule;
+        size++;
+    }
+
+    @Override
+    public boolean offerFirst(T t) {
+        addFirst(t);
+        return true;
+    }
+
+    @Override
+    public boolean offerLast(T t) {
+        addLast(t);
+        return true;
+    }
+
+    @Override
+    public T removeFirst() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        final T element = fictif.next.element;
+        fictif.next = fictif.next.next;
+        fictif.next.prev = fictif;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T removeLast() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        final T element = fictif.prev.element;
+        fictif.prev.prev.next = fictif;
+        fictif.prev = fictif.prev.prev;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T pollFirst() {
+        if (isEmpty())
+            return null;
+        final T element = fictif.next.element;
+        fictif.next = fictif.next.next;
+        fictif.next.prev = fictif;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T pollLast() {
+        if (isEmpty())
+            return null;
+        final T element = fictif.prev.element;
+        fictif.prev.prev.next = fictif;
+        fictif.prev = fictif.prev.prev;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T getFirst() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        return fictif.next.element;
+    }
+
+    @Override
+    public T getLast() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        return fictif.prev.element;
+    }
+
+    @Override
+    public T peekFirst() {
+        if (isEmpty())
+            return null;
+        return fictif.next.element;
+    }
+
+    @Override
+    public T peekLast() {
+        if (isEmpty())
+            return null;
+        return fictif.prev.element;
+    }
+
+    @Override
+    public boolean removeFirstOccurrence(Object o) {
+        return remove(o);
+    }
+
+    @Override
+    public boolean removeLastOccurrence(Object o) {
+        Iterator<T> it = descendingIterator();
+        while (it.hasNext()) {
+            T element = it.next();
+            if (element.equals(o)) {
+                it.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean offer(T t) {
+        addFirst(t);
+        return true;
+    }
+
+    @Override
+    public T remove() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        final T element = fictif.next.element;
+        fictif.next = fictif.next.next;
+        fictif.next.prev = fictif;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T poll() {
+        if (isEmpty())
+            return null;
+        final T element = fictif.next.element;
+        fictif.next = fictif.next.next;
+        fictif.next.prev = fictif;
+        size--;
+        return element;
+    }
+
+    @Override
+    public T element() {
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        return fictif.next.element;
+    }
+
+    @Override
+    public T peek() {
+        if (isEmpty())
+            return null;
+        return fictif.next.element;
+    }
+
     @Override
     public int size() {
         return size;
@@ -42,7 +214,7 @@ class Liste<T> implements Collection<T> {
 
     @Override
     public boolean isEmpty() {
-        return fictif.next == fictif;
+        return size == 0;
     }
 
     @Override
@@ -53,14 +225,18 @@ class Liste<T> implements Collection<T> {
         return false;
     }
 
-    public void push(T element) {
-        fictif.next = new Cellule<>(element, fictif.next);
+    @Override
+    public void push(T t) {
+        final Cellule<T> cellule = new Cellule<>(t, fictif, fictif.next);
+        fictif.next.prev = cellule;
+        fictif.next = cellule;
         size++;
     }
 
     public void pushAll(Collection<? extends T> elements) {
         Liste<T> tmp = new Liste<>(elements);
-        tmp.queue.next = fictif.next;
+        tmp.fictif.prev.next = fictif.next;
+        fictif.next.prev = tmp.fictif.prev;
         fictif.next = tmp.fictif.next;
         size += tmp.size;
     }
@@ -70,21 +246,25 @@ class Liste<T> implements Collection<T> {
         pushAll(Arrays.asList(elements));
     }
 
-
-    public T top() {
-        return fictif.next.element;
-    }
-
+    @Override
     public T pop() {
-        Cellule<T> top = fictif.next;
+        if (isEmpty())
+            throw new NoSuchElementException("La Liste est vide");
+        final T element = fictif.next.element;
         fictif.next = fictif.next.next;
+        fictif.next.prev = fictif;
         size--;
-        return top.element;
+        return element;
     }
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterateur();
+        return new IteratorImpl();
+    }
+
+    @Override
+    public Iterator<T> descendingIterator() {
+        return new DescendingIteratorImpl();
     }
 
     @Override
@@ -99,8 +279,9 @@ class Liste<T> implements Collection<T> {
 
     @Override
     public boolean add(T t) {
-        queue.next = new Cellule<>(t, fictif);
-        queue = queue.next;
+        final Cellule<T> cellule = new Cellule<>(t, fictif.prev, fictif);
+        fictif.prev.next = cellule;
+        fictif.prev = cellule;
         size++;
         return true;
     }
@@ -110,9 +291,9 @@ class Liste<T> implements Collection<T> {
         Iterator<T> it = iterator();
         while (it.hasNext())
             if (it.next().equals(o)) {
-            it.remove();
-            return true;
-        }
+                it.remove();
+                return true;
+            }
         return false;
     }
 
@@ -152,8 +333,7 @@ class Liste<T> implements Collection<T> {
 
     @Override
     public void clear() {
-        fictif.next = fictif;
-        queue = fictif;
+        fictif.next = fictif.prev = fictif;
         size = 0;
     }
 
@@ -167,176 +347,281 @@ class Liste<T> implements Collection<T> {
         return stringBuilder.append("]").toString();
     }
 
-    class Iterateur implements Iterator<T> {
+    private class IteratorImpl implements Iterator<T> {
 
-        private Cellule<T> previous, current;
-        private final Cellule<T> end;
+        private Cellule<T> previous;
 
-        private Iterateur() {
-            this.current = fictif;
-            this.previous = new Cellule<>(null, current);
-            this.end = queue.next;
+        private IteratorImpl() {
+            this.previous = fictif;
         }
 
         @Override
         public boolean hasNext() {
-            return current.next != end;
+            return previous.next != fictif;
         }
 
         @Override
         public T next() {
-            T element = current.next.element;
-            previous = current;
-            current = current.next;
+            T element = previous.next.element;
+            previous = previous.next;
             return element;
         }
 
         @Override
         public void remove() {
-            previous.next = current.next;
+            previous.prev.next = previous.next;
+            previous.next.prev = previous.prev;
+            size--;
+        }
+    }
+
+    private class DescendingIteratorImpl implements Iterator<T> {
+
+        private Cellule<T> successor;
+
+        private DescendingIteratorImpl() {
+            this.successor = fictif;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return successor.prev != fictif;
+        }
+
+        @Override
+        public T next() {
+            T element = successor.prev.element;
+            successor = successor.prev;
+            return element;
+        }
+
+        @Override
+        public void remove() {
+            successor.next.prev = successor.prev;
+            successor.prev.next = successor.next;
             size--;
         }
     }
 }
 
-class Arbre<T> implements Iterable<T> {
+abstract class AbstractArbre<T> implements Iterable<T> {
+    enum Parcours {PROFONDEUR, LARGEUR}
 
-    private final T racine;
-    private final Liste<Arbre<T>> fils;
+    public static Parcours parcours = Parcours.PROFONDEUR;
+}
 
-    public Arbre(T racine) {
-        this.racine = racine;
-        this.fils = new Liste<>();
-    }
-
-    public Arbre(T racine, Collection<? extends Arbre<T>> fils) {
-        this(racine);
-        this.fils.addAll(fils);
-//        System.out.println(this.fils);
-    }
-
-    @SafeVarargs
-    public Arbre(T racine, Arbre<T>... fils) {
-        this(racine, Arrays.asList(fils));
-    }
-
-//    public Arbre(T racine, Collection<? extends T> fils) {
-//        this(racine);
-//        fils.stream().map(Arbre::new).forEach(this.fils::add);
-//    }
-//
-//    @SafeVarargs
-//    public Arbre(T racine, T... fils) {
-//        this(racine);
-//        Arrays.stream(fils).map(Arbre::new).forEach(this.fils::add);
-//    }
+class ArbreVide<T> extends AbstractArbre<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterateur();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
+
+            @Override
+            public T next() {
+                return null;
+            }
+        };
+    }
+}
+
+class Arbre<T> extends AbstractArbre<T> {
+
+    private final Noeud<T> racine;
+
+    private Arbre(Noeud<T> racine) {
+        this.racine = racine;
+    }
+
+    private Arbre(T noeud, Collection<? extends Arbre<T>> fils) {
+        this(new Noeud<>(noeud));
+        fils.stream().map(Noeud::getNoeud).forEach(racine.fils::add);
+    }
+
+    static <T> Arbre<T> creerFeuille(T racine) {
+        return new Arbre<>(new Noeud<>(racine));
+    }
+
+    static <T> Arbre<T> creerArbre(T noeud, Collection<? extends Arbre<T>> fils) {
+        return new Arbre<>(noeud, fils);
+    }
+
+    @SafeVarargs
+    static <T> Arbre<T> creerArbre(T noeud, Arbre<T>... fils) {
+        return new Arbre<>(noeud, Arrays.asList(fils));
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return racine.iterator();
     }
 
     @Override
     public String toString() {
-        return "Arbre{" +
-                "racine=" + racine +
-                ", fils=" + fils +
-                '}';
+        return racine.toString();
     }
 
-    class Iterateur implements Iterator<T> {
+    private static class Noeud<T> implements Iterable<T> {
 
-        Arbre<T> previous;
-        Liste<Arbre<T>> others;
+        private final T noeud;
+        private final Liste<Noeud<T>> fils;
 
-        public Iterateur() {
-            this.previous = new Arbre<>(null, new Arbre<T>(racine, fils));
-            this.others = new Liste<>();
+        static <T> Noeud<T> getNoeud(Arbre<T> arbre) {
+            return arbre.racine;
+        }
+
+        public Noeud(T noeud) {
+            this.noeud = noeud;
+            this.fils = new Liste<>();
+        }
+
+        public Noeud(T noeud, Collection<? extends Noeud<T>> fils) {
+            this(noeud);
+            this.fils.addAll(fils);
+        }
+
+        @SafeVarargs
+        public Noeud(T noeud, Noeud<T>... fils) {
+            this(noeud, Arrays.asList(fils));
         }
 
         @Override
-        public boolean hasNext() {
-            return !previous.fils.isEmpty();
+        public Iterator<T> iterator() {
+            return new IteratorImpl();
         }
 
         @Override
-        public T next() {
+        public String toString() {
+            Iterator<T> it = iterator();
+            StringBuilder stringBuilder = new StringBuilder("[");
+            if (it.hasNext())
+                stringBuilder.append(it.next());
+            while (it.hasNext()) {
+                stringBuilder.append(", ");
+                stringBuilder.append(it.next());
+            }
+            return stringBuilder.append("]").toString();
+        }
 
-            Arbre<T> next = previous.fils.pop();
-            System.out.println(next);
-            System.out.println(next.fils);
-            Liste<Arbre<T>> others = previous.fils;
-            if (!others.isEmpty())
-                this.others.pushAll(others);
-            previous = next;
+        class IteratorImpl implements Iterator<T> {
 
-            if (previous.fils.isEmpty()) {
-                if (!this.others.isEmpty()) {
-                    previous = this.others.pop();
+            Liste<Noeud<T>> noeuds;
+            StartParcours<T> startParcours;
+
+            interface StartParcours<T> {
+                Noeud<T> execute();
+            }
+
+            class ParcoursEnProfondeur implements StartParcours<T> {
+
+                @Override
+                public Noeud<T> execute() {
+                    Noeud<T> next = noeuds.pop();
+                    noeuds.pushAll(next.fils);
+                    return next;
                 }
             }
-            return next.racine;
-        }
-    }
 
+            class ParcoursEnLargeur implements StartParcours<T> {
+
+                @Override
+                public Noeud<T> execute() {
+                    Noeud<T> next = noeuds.pop();
+                    noeuds.addAll(next.fils);
+                    return next;
+                }
+            }
+
+            private StartParcours<T> creerStratParours() {
+                return switch (AbstractArbre.parcours) {
+                    case PROFONDEUR -> new ParcoursEnProfondeur();
+                    case LARGEUR -> new ParcoursEnLargeur();
+                };
+            }
+
+            public IteratorImpl() {
+                this.noeuds = new Liste<>(new Noeud<>(noeud, fils));
+                this.startParcours = creerStratParours();
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !noeuds.isEmpty();
+            }
+
+            @Override
+            public T next() {
+                return startParcours.execute().noeud;
+            }
+        }
+
+    }
 }
 
 
 public class PatternIterateur {
     public static void main(String[] args) {
-        Liste<Integer> liste = new Liste<>(0);
-        for (int i = 1; i < 10; i++) {
-            liste.push(i);
-        }
+        Liste<Integer> liste = new Liste<>(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
         System.out.println();
         for (Integer elt : liste) {
             System.out.println(elt);
         }
 
-        Iterator<Integer> it = liste.iterator();
-        System.out.println();
-        while (it.hasNext()) {
-            int next = it.next();
-            if (next % 2 == 1)
-                it.remove();
-            System.out.println(next);
-        }
+        liste.removeIf(integer -> integer % 2 == 1);
 
         System.out.println();
         liste.forEach(System.out::println);
 
-        Arbre<Integer> arbre1 = new Arbre<>(1,
-                new Arbre<>(2),
-                new Arbre<>(3),
-                new Arbre<>(4),
-                new Arbre<>(5),
-                new Arbre<>(6),
-                new Arbre<>(7)
+        AbstractArbre<Integer> arbre1 = Arbre.creerArbre(1,
+                Arbre.creerFeuille(2),
+                Arbre.creerFeuille(3),
+                Arbre.creerFeuille(4),
+                Arbre.creerFeuille(5),
+                Arbre.creerFeuille(6),
+                Arbre.creerFeuille(7)
         );
-        Arbre<Integer> arbre2 = new Arbre<>(
+        AbstractArbre<Integer> arbre2 = Arbre.creerArbre(
                 1,
-                new Arbre<>(
+                Arbre.creerArbre(
                         2,
-                        new Arbre<>(5),
-                        new Arbre<>(6)
+                        Arbre.creerFeuille(5),
+                        Arbre.creerFeuille(6)
                 ),
-                new Arbre<>(
+                Arbre.creerArbre(
                         3,
-                        new Arbre<>(7),
-                        new Arbre<>(8)
+                        Arbre.creerFeuille(7),
+                        Arbre.creerFeuille(8)
                 ),
-                new Arbre<>(
+                Arbre.creerArbre(
                         4,
-                        new Arbre<>(9),
-                        new Arbre<>(10)
+                        Arbre.creerFeuille(9),
+                        Arbre.creerFeuille(10)
                 )
         );
 
         System.out.println();
-
-        arbre1.forEach(System.out::println);
-        arbre2.forEach(System.out::println);
+        System.out.println(arbre1);
+        System.out.println(arbre2);
+        AbstractArbre.parcours = AbstractArbre.Parcours.LARGEUR;
+        System.out.println(arbre2);
+        System.out.println(arbre1);
+        var tmp = new Liste<>();
+        arbre1.iterator().forEachRemaining(tmp::push);
+        System.out.println(tmp);
+        liste.reverse();
+        liste.addAll(List.of(11, 12, 13));
+        List.of(11, 12, 13).forEach(liste::push);
+        for (int i = 0; i < 6; i++) {
+            System.out.println(liste.poll());
+        }
+        for (int i = 0; i < 6; i++) {
+            System.out.println(liste.pollLast());
+        }
+        System.out.println(liste);
 
     }
 }
