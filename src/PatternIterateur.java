@@ -14,7 +14,7 @@ final class Cellule<T> {
     }
 }
 
-class Liste<T> implements Iterable<T>, Collection<T> {
+class Liste<T> implements Collection<T> {
 
     private Cellule<T> fictif, queue;
     private int size;
@@ -84,7 +84,7 @@ class Liste<T> implements Iterable<T>, Collection<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterateur(this);
+        return new Iterateur();
     }
 
     @Override
@@ -169,28 +169,31 @@ class Liste<T> implements Iterable<T>, Collection<T> {
 
     class Iterateur implements Iterator<T> {
 
-        private Cellule<T> previous, end;
+        private Cellule<T> previous, current;
+        private final Cellule<T> end;
 
-        private Iterateur(Liste<T> liste) {
-            this.previous = new Cellule<>(fictif);
-            this.end = liste.queue.next;
+        private Iterateur() {
+            this.current = fictif;
+            this.previous = new Cellule<>(null, current);
+            this.end = queue.next;
         }
 
         @Override
         public boolean hasNext() {
-            return previous.next != end;
+            return current.next != end;
         }
 
         @Override
         public T next() {
-            T element = previous.next.element;
-            previous = previous.next;
+            T element = current.next.element;
+            previous = current;
+            current = current.next;
             return element;
         }
 
         @Override
         public void remove() {
-            previous = previous.next;
+            previous.next = current.next;
             size--;
         }
     }
@@ -230,7 +233,7 @@ class Arbre<T> implements Iterable<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return new Iterateur(this);
+        return new Iterateur();
     }
 
     @Override
@@ -246,8 +249,8 @@ class Arbre<T> implements Iterable<T> {
         Arbre<T> previous;
         Liste<Arbre<T>> others;
 
-        public Iterateur(Arbre<T> racine) {
-            this.previous = new Arbre<>(null, new Arbre<T>(racine.racine, racine.fils));
+        public Iterateur() {
+            this.previous = new Arbre<>(null, new Arbre<T>(racine, fils));
             this.others = new Liste<>();
         }
 
@@ -260,6 +263,8 @@ class Arbre<T> implements Iterable<T> {
         public T next() {
 
             Arbre<T> next = previous.fils.pop();
+            System.out.println(next);
+            System.out.println(next.fils);
             Liste<Arbre<T>> others = previous.fils;
             if (!others.isEmpty())
                 this.others.pushAll(others);
@@ -283,15 +288,22 @@ public class PatternIterateur {
         for (int i = 1; i < 10; i++) {
             liste.push(i);
         }
+
+        System.out.println();
         for (Integer elt : liste) {
             System.out.println(elt);
         }
 
         Iterator<Integer> it = liste.iterator();
+        System.out.println();
         while (it.hasNext()) {
-            System.out.println(it.next());
+            int next = it.next();
+            if (next % 2 == 1)
+                it.remove();
+            System.out.println(next);
         }
 
+        System.out.println();
         liste.forEach(System.out::println);
 
         Arbre<Integer> arbre1 = new Arbre<>(1,
