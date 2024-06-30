@@ -11,14 +11,14 @@ public class Joueur {
     private int score;
     private int nbVictoires;
 
-    private Joueur(String nom, Random random) {
+    private Joueur(String nom) {
         this.nom = nom;
-        this.pioche = Paquet.nouveauPaquetNeuf(random);
+        this.pioche = Paquet.nouveauPaquetNeuf();
         this.main = new ArrayList<>();
     }
 
-    public static Joueur nouveau(String nom, Random random) {
-        return new Joueur(nom, random);
+    public static Joueur nouveau(String nom) {
+        return new Joueur(nom);
     }
 
     public void initScore() {

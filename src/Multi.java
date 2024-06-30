@@ -1,18 +1,12 @@
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class BlackJack {
+public final class Multi {
 
-    private final Random random;
-    private final BufferedReader buffer;
-    private final Predicate<String> regexReponse;
     private final List<Joueur> joueurs;
     private final List<Joueur> joueursEnLice;
     private final List<List<Joueur>> classement;
@@ -22,34 +16,24 @@ public class BlackJack {
     private int nbParties;
     private int joueurCourant;
 
-    private BlackJack(ConsoleBuilder consoleBuilder) {
-        this.random = consoleBuilder.random;
-        this.buffer = consoleBuilder.buffer;
-        this.regexReponse = Pattern.compile("^$|y|o|yes|oui", Pattern.CASE_INSENSITIVE).asMatchPredicate();
-        this.joueurs = consoleBuilder.joueurs;
-        this.joueursEnLice = new ArrayList<>(consoleBuilder.nbJoueurs);
+    private Multi(Builder builder) {
+        this.joueurs = builder.joueurs;
+        this.joueursEnLice = new ArrayList<>(builder.nbJoueurs);
         this.classement = Stream.<List<Joueur>>generate(ArrayList::new).limit(22).toList();
-        this.nbPartiesGagnantes = consoleBuilder.nbPartiesGagnantes;
-        this.nbJoueurs = consoleBuilder.nbJoueurs;
+        this.nbPartiesGagnantes = builder.nbPartiesGagnantes;
+        this.nbJoueurs = builder.nbJoueurs;
     }
 
-    public interface Builder {
-        BlackJack getBlackJack();
-    }
+    public static class Builder {
 
-    public static class ConsoleBuilder implements Builder {
-
-        private final Random random;
-        private final BufferedReader buffer;
         private final List<Joueur> joueurs;
-        private int nbPartiesGagnantes;
         private int nbJoueurs;
+        private int nbPartiesGagnantes;
 
-        private ConsoleBuilder() throws IOException {
-            buffer = new BufferedReader(new InputStreamReader(System.in));
+        private Builder() throws IOException {
+            final BufferedReader buffer = Console.getInstance().getBuffer();
             nbJoueurs = 0;
             nbPartiesGagnantes = 0;
-            random = new Random();
             while (nbJoueurs == 0) {
                 System.out.print("Nombre de joueurs ? ");
                 try {
@@ -78,33 +62,34 @@ public class BlackJack {
                         System.out.println("le nom « " + nom + " » a déjà été saisi par le joueur " + (num + 1));
                 } while (num != -1);
                 noms.add(nom);
-                joueurs.add(Joueur.nouveau(nom, random));
+                joueurs.add(Joueur.nouveau(nom));
             }
         }
 
-        @Override
-        public BlackJack getBlackJack() {
-            if (blackJack == null)
-                blackJack = new BlackJack(this);
-            return blackJack;
+        public Multi getMulti() {
+            return new Multi(this);
         }
 
 
     }
 
-    private static Builder builder;
-    private static BlackJack blackJack;
+    private static Multi multi;
 
-    public static Builder builder() throws IOException {
-        if (builder == null)
-            builder = new ConsoleBuilder();
-        return builder;
+    public static Multi getInstance() {
+        if (multi == null) {
+            try {
+                multi = new Builder().getMulti();
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        return multi;
     }
 
     private void premierTour() {
-        final List<Joueur> joueurs = blackJack.joueursEnLice;
-        final List<List<Joueur>> classement = blackJack.classement;
-        joueurs.addAll(blackJack.joueurs);
+        final List<Joueur> joueurs = multi.joueursEnLice;
+        final List<List<Joueur>> classement = multi.classement;
+        joueurs.addAll(multi.joueurs);
         for (Joueur joueur : joueurs) {
             final Paquet pioche = joueur.getPioche();
             pioche.fusionnerCartes(joueur.getMain());
@@ -112,11 +97,11 @@ public class BlackJack {
         }
         joueurs.forEach(Joueur::initScore);
         classement.forEach(List::clear);
-        blackJack.nbTours = 0;
+        multi.nbTours = 0;
 
         // Permutation aléatoire de l'ordre de passage des joueurs
-        Collections.shuffle(joueurs, blackJack.random);
-        IntStream.range(0, blackJack.nbJoueurs)
+        Collections.shuffle(joueurs, Utility.getInstance().getRandom());
+        IntStream.range(0, multi.nbJoueurs)
                 .forEachOrdered(i -> joueurs.get(i).setPositionInitiale(i));
         System.out.println("Le tirage au sort a donné l'ordre suivant : " +
                 joueurs.stream()
@@ -148,7 +133,7 @@ public class BlackJack {
     }
 
     private List<Joueur> joueursEnTete() {
-        final List<List<Joueur>> classement = blackJack.classement;
+        final List<List<Joueur>> classement = multi.classement;
         ListIterator<List<Joueur>> it = classement.listIterator(classement.size());
         while (it.hasPrevious()) {
             final List<Joueur> joueurs = it.previous();
@@ -180,7 +165,7 @@ public class BlackJack {
                 final Paquet pioche = finaliste.getPioche();
                 final Carte carte = pioche.piocheCarte().get(0);
                 System.out.print("Attention, " + nom + " ! *Roulement de tambour* (Appuyer sur Entrée pour continuer...)");
-                blackJack.buffer.readLine();
+                Console.getInstance().getBuffer().readLine();
                 System.out.println(nom + " a pioché : " + carte);
                 if (gagnant == null || carte.valeur().compareTo(gagnant.getValue().valeur()) > 0) {
                     gagnant = Map.entry(finaliste, carte);
@@ -202,17 +187,18 @@ public class BlackJack {
     }
 
     private boolean continuer() throws IOException {
+        final Console console = Console.getInstance();
         System.out.print("Tirer une nouvelle carte ? ");
-        final String reponse = blackJack.buffer.readLine();
-        return blackJack.regexReponse.test(reponse);
+        final String reponse = console.getBuffer().readLine();
+        return console.getRegexReponse().test(reponse);
     }
 
     private void tourJoueur() throws IOException {
-        final List<Joueur> joueurs = blackJack.joueursEnLice;
-        final Joueur joueur = joueurs.get(blackJack.joueurCourant);
+        final List<Joueur> joueurs = multi.joueursEnLice;
+        final Joueur joueur = joueurs.get(multi.joueurCourant);
         final String nom = joueur.getNom();
         final int score = joueur.getScore();
-        final List<List<Joueur>> classement = blackJack.classement;
+        final List<List<Joueur>> classement = multi.classement;
 
         // Si le joueur courant est le plus proche de 21 avant tirage, on l'affiche
         System.out.println();
@@ -246,21 +232,21 @@ public class BlackJack {
         if (!perdu)
             classement.get(joueur.getScore()).add(joueur);
         if (!cont) {
-            joueurs.remove(blackJack.joueurCourant);
+            joueurs.remove(multi.joueurCourant);
             if (abandonne)
                 System.out.println(nom + " abandonne la partie avec " + score + " points.");
         } else
-            blackJack.joueurCourant++;
+            multi.joueurCourant++;
     }
 
     private void tourComplet() throws IOException {
-        blackJack.nbTours++;
+        multi.nbTours++;
         System.out.println("\n*******************************\n");
-        System.out.println("TOUR " + blackJack.nbTours + " :");
+        System.out.println("TOUR " + multi.nbTours + " :");
 
         // On affiche l'ordre de passage des joueurs toujours en lice
         // Et leur score
-        final List<Joueur> joueurs = blackJack.joueursEnLice;
+        final List<Joueur> joueurs = multi.joueursEnLice;
         int n = joueurs.size();
         System.out.println(n + " joueur" + (n > 1 ? "(s)" : "") + " : " +
                 joueurs.stream()
@@ -289,13 +275,13 @@ public class BlackJack {
         );
 
         // On fait jouer un tour à chaque joueur toujours en lice
-        blackJack.joueurCourant = 0;
-        final int nombreTours = blackJack.joueursEnLice.size();
+        multi.joueurCourant = 0;
+        final int nombreTours = multi.joueursEnLice.size();
         for (int i = 0; i < nombreTours; i++) tourJoueur();
     }
 
     private boolean partieFinie() {
-        return blackJack.joueursEnLice.isEmpty();
+        return multi.joueursEnLice.isEmpty();
     }
 
     private void partieComplete() throws IOException {
@@ -306,7 +292,7 @@ public class BlackJack {
         // On affiche les joueurs dans l'ordre croissant des scores qui n'ont pas dépassé 21
         // Et qui sont donc toujours en lice pour la victoire finale
         System.out.println("Les joueurs toujours en lice pour la victoire finale sont :");
-        for (List<Joueur> joueurs : blackJack.classement)
+        for (List<Joueur> joueurs : multi.classement)
             if (!joueurs.isEmpty())
                 joueurs.stream()
                         .map(joueur -> joueur.getNom() + " avec " + joueur.getScore() + " points.")
@@ -326,20 +312,20 @@ public class BlackJack {
         // On incrémente le nombre de victoires du vainqueur
         premier.incrNbVictoires();
         System.out.print("(Appuyer sur Entrée pour continuer...)");
-        blackJack.buffer.readLine();
+        Console.getInstance().getBuffer().readLine();
         System.out.println();
 
         // On affiche la liste des joueurs et le nombre de leurs victoires
         // Du plus petit nombre au plus grand
         System.out.println("Les scores de victoires sont : ");
-        blackJack.joueurs.stream()
+        multi.joueurs.stream()
                 .sorted(Comparator.comparing(Joueur::getNbVictoires))
                 .map(joueur -> joueur.getNom() + " avec " + joueur.getNbVictoires() + " victoire(s)")
                 .forEach(System.out::println);
         System.out.println();
 
         // On affiche le ou les noms des joueurs qui ont obtenu le meilleur score après x parties jouées
-        final Map<Integer, List<String>> classement = blackJack.joueurs.stream()
+        final Map<Integer, List<String>> classement = multi.joueurs.stream()
                 .collect(Collectors.groupingBy(
                         Joueur::getNbVictoires,
                         Collectors.mapping(Joueur::getNom, Collectors.toList())
@@ -348,7 +334,7 @@ public class BlackJack {
         final int meilleurScore = meilleursJoueurs.getKey();
         final List<String> noms = meilleursJoueurs.getValue();
         final int n = noms.size();
-        final int nbParties = blackJack.nbParties;
+        final int nbParties = multi.nbParties;
         System.out.println((n > 1 ? "Les" : "Le") +
                 (n > 1 ? " joueurs " : " joueur ") +
                 (n < 2 ? noms.get(0) : String.join(", ", noms.subList(0, n - 1))) +
@@ -360,22 +346,23 @@ public class BlackJack {
     }
 
     public void jouer() throws IOException {
+        final Console console = Console.getInstance();
         Optional<Joueur> meilleurJoueur = Optional.empty();
         String reponse = "oui";
-        while (blackJack.regexReponse.test(reponse)) {
-            blackJack.nbParties++;
+        while (console.getRegexReponse().test(reponse)) {
+            multi.nbParties++;
             System.out.println("\n*******************************\n");
-            System.out.println("PARTIE " + blackJack.nbParties + " :");
+            System.out.println("PARTIE " + multi.nbParties + " :");
             premierTour();
             partieComplete();
-            meilleurJoueur = blackJack.joueurs.stream()
-                    .dropWhile(joueur -> joueur.getNbVictoires() < blackJack.nbPartiesGagnantes)
+            meilleurJoueur = multi.joueurs.stream()
+                    .dropWhile(joueur -> joueur.getNbVictoires() < multi.nbPartiesGagnantes)
                     .findFirst();
             if (meilleurJoueur.isPresent())
                 break;
             System.out.println();
             System.out.print("Nouvelle partie ? ");
-            reponse = blackJack.buffer.readLine();
+            reponse = console.getBuffer().readLine();
         }
 
         System.out.println("\n*******************************\n");
@@ -387,7 +374,7 @@ public class BlackJack {
         }
 
         // On affiche le ou les noms des joueurs qui ont obtenu le meilleur score après x parties jouées
-        final Map<Integer, List<String>> classement = blackJack.joueurs.stream()
+        final Map<Integer, List<String>> classement = multi.joueurs.stream()
                 .collect(Collectors.groupingBy(
                         Joueur::getNbVictoires,
                         Collectors.mapping(Joueur::getNom, Collectors.toList())
@@ -396,7 +383,7 @@ public class BlackJack {
         final int meilleurScore = meilleursJoueurs.getKey();
         final List<String> noms = meilleursJoueurs.getValue();
         final int n = noms.size();
-        final int nbParties = blackJack.nbParties;
+        final int nbParties = multi.nbParties;
         System.out.println((n > 1 ? "Les" : "Le") +
                 (n > 1 ? " joueurs " : " joueur ") +
                 (n < 2 ? noms.get(0) : String.join(", ", noms.subList(0, n - 1))) +
@@ -407,5 +394,4 @@ public class BlackJack {
         );
 
     }
-
 }

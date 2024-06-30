@@ -4,8 +4,8 @@ import java.io.IOException;
 // then press Enter. You can now see whitespace characters in your code.
 public class Main {
     public static void main(String[] args) throws IOException {
-        final BlackJack blackJack = BlackJack.builder().getBlackJack();
-        blackJack.jouer();
+        final Solo solo = Solo.getInstance();
+        solo.jouer();
     }
 }
 

@@ -408,6 +408,20 @@ abstract class AbstractArbre<T> implements Iterable<T> {
     enum Parcours {PROFONDEUR, LARGEUR}
 
     public static Parcours parcours = Parcours.PROFONDEUR;
+
+    @Override
+    public String toString() {
+        Iterator<T> it = iterator();
+        StringBuilder stringBuilder = new StringBuilder("[");
+        if (it.hasNext())
+            stringBuilder.append(it.next());
+        while (it.hasNext()) {
+            stringBuilder.append(", ");
+            stringBuilder.append(it.next());
+        }
+        return stringBuilder.append("]").toString();
+    }
+
 }
 
 class ArbreVide<T> extends AbstractArbre<T> {
@@ -456,15 +470,10 @@ class Arbre<T> extends AbstractArbre<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return racine.iterator();
+        return new Noeud.IteratorImpl<>(this);
     }
 
-    @Override
-    public String toString() {
-        return racine.toString();
-    }
-
-    private static class Noeud<T> implements Iterable<T> {
+    private static class Noeud<T> {
 
         private final T noeud;
         private final Liste<Noeud<T>> fils;
@@ -488,25 +497,7 @@ class Arbre<T> extends AbstractArbre<T> {
             this(noeud, Arrays.asList(fils));
         }
 
-        @Override
-        public Iterator<T> iterator() {
-            return new IteratorImpl();
-        }
-
-        @Override
-        public String toString() {
-            Iterator<T> it = iterator();
-            StringBuilder stringBuilder = new StringBuilder("[");
-            if (it.hasNext())
-                stringBuilder.append(it.next());
-            while (it.hasNext()) {
-                stringBuilder.append(", ");
-                stringBuilder.append(it.next());
-            }
-            return stringBuilder.append("]").toString();
-        }
-
-        class IteratorImpl implements Iterator<T> {
+        static class IteratorImpl<T> implements Iterator<T> {
 
             Liste<Noeud<T>> noeuds;
             StartParcours<T> startParcours;
@@ -542,8 +533,8 @@ class Arbre<T> extends AbstractArbre<T> {
                 };
             }
 
-            public IteratorImpl() {
-                this.noeuds = new Liste<>(new Noeud<>(noeud, fils));
+            public IteratorImpl(Arbre<T> arbre) {
+                this.noeuds = new Liste<>(arbre.racine);
                 this.startParcours = creerStratParours();
             }
 

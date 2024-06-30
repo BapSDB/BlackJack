@@ -9,25 +9,22 @@ public class Paquet implements Iterable<Carte> {
         return cartes.iterator();
     }
 
-    private final Random random;
     private final List<Carte> cartes;
 
-    private Paquet(Random random) {
-        this.random = random;
+    private Paquet() {
         this.cartes = new ArrayList<>(NB_MAX_CARTES);
     }
 
     public Paquet(Paquet paquet) {
-        this.random = paquet.random;
         this.cartes = new ArrayList<>(paquet.cartes);
     }
 
     public static Paquet nouveauPaquetVide(Random random) {
-        return new Paquet(random);
+        return new Paquet();
     }
 
-    public static Paquet nouveauPaquetNeuf(Random random) {
-        Paquet paquet = new Paquet(random);
+    public static Paquet nouveauPaquetNeuf() {
+        Paquet paquet = new Paquet();
         for (Carte.Valeur valeur : Carte.Valeur.values())
             for (Carte.Couleur couleur : Carte.Couleur.values())
                 paquet.cartes.add(new Carte(valeur, couleur));
@@ -35,13 +32,13 @@ public class Paquet implements Iterable<Carte> {
     }
 
     public void melangerCartes() {
-        Collections.shuffle(cartes, random);
+        Collections.shuffle(cartes, Utility.getInstance().getRandom());
     }
 
     public void fusionnerCartes(List<Carte> cartes) {
         final Iterator<Carte> it = cartes.iterator();
         while (it.hasNext()) {
-            this.cartes.add(random.nextInt(this.cartes.size()), it.next());
+            this.cartes.add(Utility.getInstance().getRandom().nextInt(this.cartes.size()), it.next());
             it.remove();
         }
     }

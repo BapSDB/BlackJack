@@ -14,7 +14,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.net.URL;
-import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
@@ -29,7 +28,7 @@ public class Jeu extends Application implements Initializable {
     private static final Paquet paquet;
 
     static {
-        paquet = Paquet.nouveauPaquetNeuf(new Random());
+        paquet = Paquet.nouveauPaquetNeuf();
         paquet.melangerCartes();
     }
 
@@ -58,47 +57,47 @@ public class Jeu extends Application implements Initializable {
 //            content.put(new DataFormat("carte"), new Pioche.Paquet.Carte())
             content.putString(
                     vBox.getChildren().stream()
-                    .map(Text.class::cast)
-                    .map(Text::getText)
-                    .collect(Collectors.joining(" "))
+                            .map(Text.class::cast)
+                            .map(Text::getText)
+                            .collect(Collectors.joining(" "))
             );
             db.setContent(content);
             event.consume();
         });
         vBox.setOnDragOver(event -> {
-                /* data is dragged over the target */
-                /* accept it only if it is not dragged from the same node
-                 * and if it has a string data */
-                if (event.getGestureSource() != vBox &&
-                        event.getDragboard().hasString()) {
-                    /* allow for both copying and moving, whatever user chooses */
-                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
-                }
+            /* data is dragged over the target */
+            /* accept it only if it is not dragged from the same node
+             * and if it has a string data */
+            if (event.getGestureSource() != vBox &&
+                    event.getDragboard().hasString()) {
+                /* allow for both copying and moving, whatever user chooses */
+                event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+            }
 
-                event.consume();
+            event.consume();
         });
 
         vBox.setOnDragDropped(event -> {
-                /* data dropped */
-                /* if there is a string data on dragboard, read it and use it */
-                Dragboard db = event.getDragboard();
-                boolean success = false;
-                if (db.hasString()) {
+            /* data dropped */
+            /* if there is a string data on dragboard, read it and use it */
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasString()) {
 //                    vBox.setText(db.getString());
-                    success = true;
-                }
-                /* let the source know whether the string was successfully
-                 * transferred and used */
-                event.setDropCompleted(success);
+                success = true;
+            }
+            /* let the source know whether the string was successfully
+             * transferred and used */
+            event.setDropCompleted(success);
 
-                event.consume();
+            event.consume();
         });
         return vBox;
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        flowPane.setPrefWrapLength(6*(80.0 + 10.0));
+        flowPane.setPrefWrapLength(6 * (80.0 + 10.0));
         flowPane.getChildren().clear();
         VBox vCarte = vueCarte(paquet.iterator().next());
         flowPane.getChildren().add(vCarte);
