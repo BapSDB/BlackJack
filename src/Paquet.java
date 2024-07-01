@@ -43,6 +43,11 @@ public class Paquet implements Iterable<Carte> {
         }
     }
 
+    public int size()
+    {
+        return cartes.size();
+    }
+
     public Carte getCarte(int i) {
         return cartes.get(i);
     }
