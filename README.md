@@ -12,13 +12,20 @@
 
 ### Version Multi
 
-#### Crash : Out of bounds quand une carte est piochée lors d'un tour complet après plusieurs parties jouées
+#### ~~Crash : Out of bounds quand une carte est piochée lors d'un tour complet après plusieurs parties jouées~~
 
-1. Quand un joueur obtient 21 points dès le tirage initial, il n'est pas retiré de la liste des joueurs en lice
+1. ~~Quand un joueur obtient 21 points dès le tirage initial, il n'est pas retiré de la liste des joueurs en lice~~
 2. Quand il reste un joueur en lide avec le meilleur score, il devrait se retirer automatiquement (Préciser quand une telle situation se présente avec un message spécifique)
 3. Quand un joueur a un score inférieur à d'autres joueurs en tête, le faire jouer automatiquement (Préciser quand une telle situation se présente)
 4. Quand un joueur a un score inférieur à d'autres joueurs qui se sont retirés en tête, le faire jouer automatiquement (Préciser quand une telle situation se présente)
+5. Choisir un ordre aléatoire pour les joeurs avant la toute première partie puis procéder par roulement
 
 ### Version Solo
 
-1. Quand le joueur obtient 21 points dès le tirage initial, il n'est pas retiré de la liste des joueurs en lice
+1. ~~Quand le joueur obtient 21 points dès le tirage initial, il n'est pas retiré de la liste des joueurs en lice~~
+
+### Version avc Mise
+
+1. Améliorer le retour d'informations notamment en fin de partie
+2. Implémenter un système de mise comme au poker
+3. Choisir un ordre aléatoire pour les joeurs avant la toute première partie puis procéder par roulement

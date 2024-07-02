@@ -424,6 +424,9 @@ abstract class AbstractArbre<T> implements Iterable<T> {
 
 }
 
+
+// type 'a arbre = ArbreVide | Arbre of 'a noeud and 'a noeud = Val of 'a | Arbre of 'a noeud list
+
 class ArbreVide<T> extends AbstractArbre<T> {
 
     @Override

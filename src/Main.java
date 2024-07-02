@@ -6,6 +6,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         switch (args[0]) {
             case "multi" -> Multi.getInstance().jouer();
+            case "mise" -> Mise.getInstance().jouer();
             default -> Solo.getInstance().jouer();
         }
     }
