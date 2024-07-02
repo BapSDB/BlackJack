@@ -5,8 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public final class Multi
-{
+public final class Multi {
 
     private final List<Joueur> joueurs;
     private final List<Joueur> joueursEnLice;
@@ -17,8 +16,7 @@ public final class Multi
     private int nbParties;
     private int joueurCourant;
 
-    private Multi(Builder builder)
-    {
+    private Multi(Builder builder) {
         this.joueurs = builder.joueurs;
         this.joueursEnLice = new ArrayList<>(builder.nbJoueurs);
         this.classement = Stream.<List<Joueur>>generate(ArrayList::new).limit(22).toList();
@@ -26,47 +24,37 @@ public final class Multi
         this.nbJoueurs = builder.nbJoueurs;
     }
 
-    public static class Builder
-    {
+    public static class Builder {
 
         private final List<Joueur> joueurs;
         private int nbJoueurs;
         private int nbPartiesGagnantes;
 
-        private Builder() throws IOException
-        {
+        private Builder() throws IOException {
             final BufferedReader buffer = Console.getInstance().getBuffer();
             nbJoueurs = 0;
             nbPartiesGagnantes = 0;
-            while (nbJoueurs == 0)
-            {
+            while (nbJoueurs == 0) {
                 System.out.print("Nombre de joueurs ? ");
-                try
-                {
+                try {
                     nbJoueurs = Integer.parseUnsignedInt(buffer.readLine());
-                } catch (NumberFormatException ignored)
-                {
+                } catch (NumberFormatException ignored) {
                 }
             }
-            while (nbPartiesGagnantes == 0)
-            {
+            while (nbPartiesGagnantes == 0) {
                 System.out.print("Nombre de Parties Gagnantes ? ");
-                try
-                {
+                try {
                     nbPartiesGagnantes = Integer.parseUnsignedInt(buffer.readLine());
-                } catch (NumberFormatException ignored)
-                {
+                } catch (NumberFormatException ignored) {
                 }
             }
             joueurs = new ArrayList<>(nbJoueurs);
             final List<String> noms = new ArrayList<>(nbJoueurs);
-            for (int i = 1; i <= nbJoueurs; i++)
-            {
+            for (int i = 1; i <= nbJoueurs; i++) {
                 String nom;
                 System.out.println();
                 int num = -1;
-                do
-                {
+                do {
                     System.out.print("Entrez le nom du joueur " + i + " : ");
                     nom = buffer.readLine();
                     if (nom.isEmpty()) continue;
@@ -74,12 +62,11 @@ public final class Multi
                         System.out.println("le nom « " + nom + " » a déjà été saisi par le joueur " + (num + 1));
                 } while (num != -1);
                 noms.add(nom);
-                joueurs.add(Joueur.nouveau(nom));
+                joueurs.add(Joueur.nouveau(Joueur.Type.HUMAIN, nom));
             }
         }
 
-        public Multi getMulti()
-        {
+        public Multi getMulti() {
             return new Multi(this);
         }
 
@@ -88,33 +75,22 @@ public final class Multi
 
     private static Multi multi;
 
-    public static Multi getInstance()
-    {
-        if (multi == null)
-        {
-            try
-            {
+    public static Multi getInstance() {
+        if (multi == null) {
+            try {
                 multi = new Builder().getMulti();
-            } catch (IOException e)
-            {
+            } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
         }
         return multi;
     }
 
-    private void premierTour()
-    {
+    private void premierTour() {
         final List<Joueur> joueurs = multi.joueursEnLice;
         final List<List<Joueur>> classement = multi.classement;
         joueurs.addAll(multi.joueurs);
-        for (Joueur joueur : joueurs)
-        {
-            final Paquet pioche = joueur.getPioche();
-            pioche.fusionnerCartes(joueur.getMain());
-            assert pioche.size() == Paquet.NB_MAX_CARTES;
-            pioche.melangerCartes();
-        }
+        joueurs.forEach(Joueur::initPioche);
         joueurs.forEach(Joueur::initScore);
         classement.forEach(List::clear);
         multi.nbTours = 0;
@@ -131,23 +107,20 @@ public final class Multi
 
         // On pioche les deux premières cartes pour chaque joueur
         Iterator<Joueur> it = joueurs.iterator();
-        while (it.hasNext())
-        {
+        while (it.hasNext()) {
             final Joueur joueur = it.next();
-            final List<Carte> cartes = joueur.getPioche().piocheCarte(2);
+            final List<Carte> cartes = joueur.tirerCarte(2);
             final String nom = joueur.getNom();
             final int score = joueur.getScore();
             System.out.println();
             System.out.println(nom + " pioche ses deux premières cartes...");
-            for (Carte carte : cartes)
-            {
+            for (Carte carte : cartes) {
                 System.out.println(nom + " a pioché : " + carte);
                 joueur.ajouterScore(carte.valeurCarte(score));
             }
             final int nouveauScore = joueur.getScore();
             System.out.println(nom + " a un score initial de " + nouveauScore + " points.");
-            if (score == 21)
-            {
+            if (nouveauScore == 21) {
                 System.out.println(nom + " termine la partie avec un score parfait de 21 points !");
                 it.remove();
             }
@@ -155,12 +128,10 @@ public final class Multi
         }
     }
 
-    private List<Joueur> joueursEnTete()
-    {
+    private List<Joueur> joueursEnTete() {
         final List<List<Joueur>> classement = multi.classement;
         ListIterator<List<Joueur>> it = classement.listIterator(classement.size());
-        while (it.hasPrevious())
-        {
+        while (it.hasPrevious()) {
             final List<Joueur> joueurs = it.previous();
             if (!joueurs.isEmpty())
                 return joueurs;
@@ -168,8 +139,7 @@ public final class Multi
         throw new NoSuchElementException();
     }
 
-    private Joueur departager(List<Joueur> finalistes) throws IOException
-    {
+    private Joueur departager(List<Joueur> finalistes) throws IOException {
         System.out.println();
         System.out.println(finalistes.size() + " joueurs sont à égalité.");
         System.out.println("Celui qui tire la carte de plus haute valeur remporte la partie !");
@@ -181,30 +151,24 @@ public final class Multi
         boolean fin = false;
         Map.Entry<Joueur, Carte> gagnant = null;
         finalistes.sort(Comparator.comparing(Joueur::getPositionInitiale));
-        while (!fin)
-        {
+        while (!fin) {
             gagnant = null;
             int joueurCourant = 0;
             final int nombreTours = finalistes.size();
-            for (int i = 0; i < nombreTours; i++)
-            {
+            for (int i = 0; i < nombreTours; i++) {
                 final Joueur finaliste = finalistes.get(joueurCourant);
                 final String nom = finaliste.getNom();
-                final Paquet pioche = finaliste.getPioche();
-                final Carte carte = pioche.piocheCarte().get(0);
+                final Carte carte = finaliste.tirerCarte();
                 System.out.print("Attention, " + nom + " ! *Roulement de tambour* (Appuyer sur Entrée pour continuer...)");
                 Console.getInstance().getBuffer().readLine();
                 System.out.println(nom + " a pioché : " + carte);
-                if (gagnant == null || carte.valeur().compareTo(gagnant.getValue().valeur()) > 0)
-                {
+                if (gagnant == null || carte.valeur().compareTo(gagnant.getValue().valeur()) > 0) {
                     gagnant = Map.entry(finaliste, carte);
                     joueurCourant++;
                     fin = true;
-                } else if (carte.valeur().compareTo(gagnant.getValue().valeur()) < 0)
-                {
+                } else if (carte.valeur().compareTo(gagnant.getValue().valeur()) < 0) {
                     finalistes.remove(joueurCourant);
-                } else
-                {
+                } else {
                     joueurCourant++;
                     fin = false;
                 }
@@ -217,16 +181,7 @@ public final class Multi
         return gagnant.getKey();
     }
 
-    private boolean continuer() throws IOException
-    {
-        final Console console = Console.getInstance();
-        System.out.print("Tirer une nouvelle carte ? ");
-        final String reponse = console.getBuffer().readLine();
-        return console.getRegexReponse().test(reponse);
-    }
-
-    private void tourJoueur() throws IOException
-    {
+    private void tourJoueur() throws IOException {
         final List<Joueur> joueurs = multi.joueursEnLice;
         final Joueur joueur = joueurs.get(multi.joueurCourant);
         final String nom = joueur.getNom();
@@ -246,38 +201,33 @@ public final class Multi
         // On demande au joueur courant s'il souhaite tirer une carte
         // En cas de 21 ou de dépassement de 21, le joueur se retire de la liste des joueurs en lice
         // Et on affiche le message correspondant au résultat
-        boolean cont = false, perdu = false, abandonne = !continuer();
-        if (!abandonne)
-        {
-            Carte carte = joueur.getPioche().piocheCarte().get(0);
+        boolean perdu = false, continuer = joueur.continuer();
+        if (continuer) {
+            Carte carte = joueur.tirerCarte();
             System.out.println();
             System.out.println(nom + " a pioché : " + carte);
             joueur.ajouterScore(carte.valeurCarte(score));
             final int nouveauScore = joueur.getScore();
             System.out.println(nom + " a un score de " + nouveauScore + " points.\n");
-            if (nouveauScore > 21)
-            {
+            if (nouveauScore > 21) {
                 System.out.println(nom + " a perdu !");
                 perdu = true;
-            } else if (nouveauScore == 21)
-            {
+                continuer = false;
+            } else if (nouveauScore == 21) {
                 System.out.println(nom + " termine la partie avec un score parfait de 21 points !");
-            } else
-                cont = true;
+                continuer = false;
+            }
         }
         if (!perdu)
             classement.get(joueur.getScore()).add(joueur);
-        if (!cont)
-        {
+        if (!continuer) {
             joueurs.remove(multi.joueurCourant);
-            if (abandonne)
-                System.out.println(nom + " abandonne la partie avec " + score + " points.");
+            System.out.println(nom + " abandonne la partie avec " + joueur.getScore() + " points.");
         } else
             multi.joueurCourant++;
     }
 
-    private void tourComplet() throws IOException
-    {
+    private void tourComplet() throws IOException {
         multi.nbTours++;
         System.out.println("\n*******************************\n");
         System.out.println("TOUR " + multi.nbTours + " :");
@@ -318,13 +268,11 @@ public final class Multi
         for (int i = 0; i < nombreTours; i++) tourJoueur();
     }
 
-    private boolean partieFinie()
-    {
+    private boolean partieFinie() {
         return multi.joueursEnLice.isEmpty();
     }
 
-    private void partieComplete() throws IOException
-    {
+    private void partieComplete() throws IOException {
         while (!partieFinie()) tourComplet();
         System.out.println("\n*******************************\n");
         System.out.println("FIN DE LA PARTIE\n");
@@ -385,13 +333,11 @@ public final class Multi
         );
     }
 
-    public void jouer() throws IOException
-    {
+    public void jouer() throws IOException {
         final Console console = Console.getInstance();
         Optional<Joueur> meilleurJoueur = Optional.empty();
         String reponse = "oui";
-        while (console.getRegexReponse().test(reponse))
-        {
+        while (console.getRegexReponse().test(reponse)) {
             multi.nbParties++;
             System.out.println("\n*******************************\n");
             System.out.println("PARTIE " + multi.nbParties + " :");
@@ -409,8 +355,7 @@ public final class Multi
 
         System.out.println("\n*******************************\n");
         System.out.println("FIN DU JEU\n");
-        if (meilleurJoueur.isPresent())
-        {
+        if (meilleurJoueur.isPresent()) {
             final Joueur joueur = meilleurJoueur.get();
             System.out.println("BRAVO, " + joueur.getNom() + " !!! tu remportes le BlackJack !!!");
             System.out.println();

@@ -13,7 +13,7 @@ public class Solo {
     private int nbTours;
     private int nbParties;
     private boolean perdu;
-    private boolean finDePartie;
+    private boolean continuer;
 
     private Solo(Builder builder) {
         this.joueur = builder.joueur;
@@ -33,7 +33,7 @@ public class Solo {
                 System.out.print("Entrez votre nom : ");
                 nom = buffer.readLine();
             } while (nom.isEmpty());
-            joueur = Joueur.nouveau(nom);
+            joueur = Joueur.nouveau(Joueur.Type.HUMAIN, nom);
             nbPartiesGagnantes = 0;
             while (nbPartiesGagnantes == 0) {
                 System.out.print("Nombre de Parties Gagnantes ? ");
@@ -64,15 +64,14 @@ public class Solo {
     }
 
     private void premierTour() {
-        final Paquet pioche = joueur.getPioche();
-        pioche.fusionnerCartes(joueur.getMain());
-        pioche.melangerCartes();
         joueur.initScore();
+        joueur.initPioche();
         solo.nbTours = 0;
-        finDePartie = perdu = false;
+        perdu = false;
+        continuer = true;
 
         // On pioche les deux premières cartes du joueur
-        final List<Carte> cartes = joueur.getPioche().piocheCarte(2);
+        final List<Carte> cartes = joueur.tirerCarte(2);
         final String nom = joueur.getNom();
         final int score = joueur.getScore();
         System.out.println();
@@ -83,17 +82,10 @@ public class Solo {
         }
         final int nouveauScore = joueur.getScore();
         System.out.println(nom + " a un score initial de " + nouveauScore + " points.");
-        if (score == 21) {
+        if (nouveauScore == 21) {
             System.out.println(nom + " termine la partie avec un score parfait de 21 points !");
-            finDePartie = true;
+            continuer = false;
         }
-    }
-
-    private boolean continuer() throws IOException {
-        final Console console = Console.getInstance();
-        System.out.print("Tirer une nouvelle carte ? ");
-        final String reponse = console.getBuffer().readLine();
-        return console.getRegexReponse().test(reponse);
     }
 
     private void tourJoueur() throws IOException {
@@ -103,9 +95,9 @@ public class Solo {
         // On demande au joueur s'il souhaite tirer une carte
         // En cas de 21 ou de dépassement de 21, La partie se termine
         // Et on affiche le message correspondant au résultat
-        boolean cont = false, abandonne = !continuer();
-        if (!abandonne) {
-            Carte carte = joueur.getPioche().piocheCarte().get(0);
+        continuer = joueur.continuer();
+        if (continuer) {
+            Carte carte = joueur.tirerCarte();
             System.out.println();
             System.out.println(nom + " a pioché : " + carte);
             joueur.ajouterScore(carte.valeurCarte(score));
@@ -114,16 +106,13 @@ public class Solo {
             if (nouveauScore > 21) {
                 System.out.println(nom + " a perdu !");
                 perdu = true;
+                continuer = false;
             } else if (nouveauScore == 21) {
                 System.out.println(nom + " termine la partie avec un score parfait de 21 points !");
-            } else
-                cont = true;
+                continuer = false;
+            }
         }
-        if (!cont) {
-            finDePartie = true;
-            if (abandonne)
-                System.out.println(nom + " abandonne la partie avec " + score + " points.");
-        }
+        if (!continuer) System.out.println(nom + " abandonne la partie avec " + joueur.getScore() + " points.");
     }
 
     private void tourComplet() throws IOException {
@@ -134,7 +123,7 @@ public class Solo {
     }
 
     private boolean partieFinie() {
-        return finDePartie;
+        return !continuer;
     }
 
     private void partieComplete() throws IOException {

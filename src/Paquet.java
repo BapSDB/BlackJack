@@ -15,10 +15,6 @@ public class Paquet implements Iterable<Carte> {
         this.cartes = new ArrayList<>(NB_MAX_CARTES);
     }
 
-    public Paquet(Paquet paquet) {
-        this.cartes = new ArrayList<>(paquet.cartes);
-    }
-
     public static Paquet nouveauPaquetVide(Random random) {
         return new Paquet();
     }
@@ -43,20 +39,11 @@ public class Paquet implements Iterable<Carte> {
         }
     }
 
-    public int size()
-    {
-        return cartes.size();
+    public Carte piocherCarte() {
+        return piocherCarte(1).get(0);
     }
 
-    public Carte getCarte(int i) {
-        return cartes.get(i);
-    }
-
-    public List<Carte> piocheCarte() {
-        return piocheCarte(1);
-    }
-
-    public List<Carte> piocheCarte(int x) {
+    public List<Carte> piocherCarte(int x) {
         if (x < 1)
             throw new IllegalArgumentException(
                     "On doit piocher un nombre de carte strictement positif (x == " + x + ")"

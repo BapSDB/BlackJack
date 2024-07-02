@@ -42,7 +42,7 @@ public class Jeu extends Application implements Initializable {
         vBox.setStyle("-fx-border-width:1px; -fx-border-style:solid; -fx-border-color:black;");
         vBox.setAlignment(Pos.CENTER);
         vBox.setOnMouseClicked(event -> {
-            final Carte c = paquet.piocheCarte().get(0);
+            final Carte c = paquet.piocherCarte();
             System.out.println(c);
             flowPane.getChildren().add(vueCarte(c));
             flowPane.getChildren().set(0, vueCarte(paquet.iterator().next()));
